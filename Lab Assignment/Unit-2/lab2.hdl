@@ -1,0 +1,67 @@
+Q- Build the 16-bit Register chip in HDL. Show read/write operations for
+three sample inputs and capture simulation output.
+
+ans- 
+CHIP Register {
+    IN in[16], load;
+    OUT out[16];
+
+    PARTS:
+    Bit(in=in[0], load=load, out=out[0]);
+}
+CHIP Register {
+    IN in[16], load;
+    OUT out[16];
+
+    PARTS:
+    Bit(in=in[0], load=load, out=out[0]);
+    Bit(in=in[1], load=load, out=out[1]);
+    Bit(in=in[2], load=load, out=out[2]);
+    Bit(in=in[3], load=load, out=out[3]);
+    Bit(in=in[4], load=load, out=out[4]);
+    Bit(in=in[5], load=load, out=out[5]);
+    Bit(in=in[6], load=load, out=out[6]);
+    Bit(in=in[7], load=load, out=out[7]);
+    Bit(in=in[8], load=load, out=out[8]);
+    Bit(in=in[9], load=load, out=out[9]);
+    Bit(in=in[10], load=load, out=out[10]);
+    Bit(in=in[11], load=load, out=out[11]);
+    Bit(in=in[12], load=load, out=out[12]);
+    Bit(in=in[13], load=load, out=out[13]);
+    Bit(in=in[14], load=load, out=out[14]);
+    Bit(in=in[15], load=load, out=out[15]);
+}
+
+Q- Build the Program Counter (PC) chip in HDL. Complete a state-transition
+table for all combinations of reset, load, and increment signals.
+
+ans-
+
+CHIP PC {
+    IN in[16], reset, load, inc;
+    OUT out[16];
+
+    PARTS:
+    Inc16(in=out, out=incOut);
+
+    Mux16(a=out, b=incOut, sel=inc, out=mux1Out);
+
+    Mux16(a=mux1Out, b=in, sel=load, out=mux2Out);
+
+    Mux16(a=mux2Out, b=false, sel=reset, out=mux3Out);
+
+    Register(in=mux3Out, load=true, out=out);
+}
+
+q- Build the 1-bit DFF-based register (Bit chip) in HDL. Demonstrate read
+and write timing with a clock cycle trace showing tick-tock behavior.
+
+ans - 
+CHIP Bit {
+    IN in, load;
+    OUT out;
+
+    PARTS:
+    Mux(a=out, b=in, sel=load, out=next);
+    DFF(in=next, out=out);
+}
