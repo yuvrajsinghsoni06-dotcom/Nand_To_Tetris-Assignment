@@ -29,13 +29,26 @@ The Hack computer was implemented across three hierarchical HDL modules:
 3. **`Computer.hdl`**: Integrates `ROM32K`, `CPU`, and `Memory`, wiring `pc` to `ROM32K`, `instruction` to `CPU`, and `outM`/`writeM`/`addressM`/`inM` between `CPU` and `Memory`, with `reset` propagated to `CPU`.
 
 ### Official Hardware Simulator Test Results
-*(Insert genuine screenshots captured from `HardwareSimulator.bat` below after execution on the Nand2Tetris tools suite.)*
 
-- `CPU.tst`: `evidence/CPU_test.png` *(Pending official Nand2Tetris tool execution)*
-- `Memory.tst`: `evidence/Memory_test.png` *(Pending official Nand2Tetris tool execution)*
-- `ComputerAdd.tst`: `evidence/ComputerAdd_test.png` *(Pending official Nand2Tetris tool execution)*
-- `ComputerMax.tst`: `evidence/ComputerMax_test.png` *(Pending official Nand2Tetris tool execution)*
-- `ComputerRect.tst`: `evidence/ComputerRect_test.png` *(Pending official Nand2Tetris tool execution)*
+- **`CPU.tst`** (`evidence/CPU_test.jpg`) — *Passed (`Simulation successful: The output file is identical to the compare file`)*:
+
+  ![CPU.tst Simulation Output](evidence/CPU_test.jpg)
+
+- **`Memory.tst`** (`evidence/Memory_test.png`) — *Passed (`Simulation successful: The output file is identical to the compare file`)*:
+
+  ![Memory.tst Simulation Output](evidence/Memory_test.png)
+
+- **`ComputerAdd.tst`** (`evidence/ComputerAdd_test.jpg`) — *Passed (`Simulation successful: The output file is identical to the compare file`)*:
+
+  ![ComputerAdd.tst Simulation Output](evidence/ComputerAdd_test.jpg)
+
+- **`ComputerMax.tst`** (`evidence/ComputerMax_test.png`) — *Passed (`Simulation successful: The output file is identical to the compare file`)*:
+
+  ![ComputerMax.tst Simulation Output](evidence/ComputerMax_test.png)
+
+- **`ComputerRect.tst`** (`evidence/ComputerRect_test.png`) — *Passed (`Simulation successful: The output file is identical to the compare file`)*:
+
+  ![ComputerRect.tst Simulation Output](evidence/ComputerRect_test.png)
 
 ---
 
@@ -62,7 +75,9 @@ A standalone two-pass Hack assembler was implemented in Python without `eval()`,
 `Box.hack` was assembled directly using `python capstone/assembler.py capstone/Box.asm capstone/Box.hack` and verified programmatically with `tests/test_box_simulation.py` (`test_draw_and_clear_box`: passed).
 
 ### CPU Emulator Output Screenshot
-- `Box.hack` running in `CPUEmulator.bat`: `evidence/Box_output.png` *(Pending official Nand2Tetris tool execution)*
+- **`Box.hack` running in CPU Emulator** (`evidence/Box_output.png`) — *Displays the 48 × 20 black box at row 98 (`RAM[19520]`):*
+
+  ![Box.hack Screen Output](evidence/Box_output.png)
 
 ---
 

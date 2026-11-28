@@ -1,59 +1,117 @@
-// This file is part of www.nand2tetris.org
-// and the book "The Elements of Computing Systems"
-// by Nisan and Schocken, MIT Press.
-//
-// Capstone Project - Yuvraj Singh Soni (Roll No: 2501010098)
-// Part A: Hack CPU Implementation
 
 /**
- * The Hack Central Processing unit (CPU).
- * Parses the binary code in the instruction input and executes it according to the
- * Hack machine language specification. In the case of a C-instruction, computes the
- * function specified by the instruction. If the instruction specifies to read a memory
- * value, the inM input is expected to contain this value. If the instruction specifies
- * to write a value to the memory, sets the outM output to this value, sets the addressM
- * output to the target address, and asserts the writeM output (when writeM == 0, any
- * value may appear in outM).
- * If the reset input is 0, computes the address of the next instruction and sets the
- * pc output to that value. If the reset input is 1, sets pc to 0.
- * Note: The outM and writeM outputs are combinational: they are affected by the
- * instruction's execution during the current cycle. The addressM and pc outputs are
- * clocked: although they are affected by the instruction's execution, they commit to
- * their new values only in the next cycle.
+ * Capstone Project: Make the Computer Draw a Box
+ * Student: Yuvraj Singh Soni
+ * Roll No: 2501010098
+ *
+ * Part A: Hack CPU Implementation
+ *
+ * Implements the Hack CPU according to the Nand2Tetris
+ * Hack machine language specification.
  */
+
 CHIP CPU {
 
-    IN  inM[16],         // M value input  (M = contents of RAM[A])
-        instruction[16], // Instruction for execution
-        reset;           // Signals whether to restart the current
-                         // program (reset==1) or continue executing
-                         // the current program (reset==0).
+    IN  inM[16],          // Memory input
+        instruction[16],  // Current instruction
+        reset;             // PC reset signal
 
-    OUT outM[16],        // M value output
-        writeM,          // Write to M? 
-        addressM[15],    // Address in data memory (of M)
-        pc[15];          // Address of next instruction
+    OUT outM[16],         // ALU result / memory output
+        writeM,            // Memory write enable
+        addressM[15],      // Memory address
+        pc[15];            // Program counter output
 
     PARTS:
-    // Decode opcode: instruction[15] == 0 -> A-instruction, 1 -> C-instruction
-    Not(in=instruction[15], out=isAInst);
 
-    // A-register input: instruction value for A-inst, ALU output for C-inst
-    Mux16(a=aluOut, b=instruction, sel=isAInst, out=aRegIn);
+    // -------------------------------------------------
+    // 1. Instruction decoding
+    // -------------------------------------------------
 
-    // Load A-register if A-instruction OR C-instruction with d1 (instruction[5]) set
-    Or(a=isAInst, b=instruction[5], out=loadA);
-    ARegister(in=aRegIn, load=loadA, out=aOut, out[0..14]=addressM);
+    // A-instruction: instruction[15] = 0
+    // C-instruction: instruction[15] = 1
+    Not(
+        in=instruction[15],
+        out=isAInst
+    );
 
-    // Load D-register if C-instruction AND d2 (instruction[4]) set
-    And(a=instruction[15], b=instruction[4], out=loadD);
-    DRegister(in=aluOut, load=loadD, out=dOut);
+    // -------------------------------------------------
+    // 2. A-register input selection
+    // -------------------------------------------------
 
-    // Select ALU y-input: A-register (a=0) or inM (a=1) during C-instruction
-    And(a=instruction[15], b=instruction[12], out=selAM);
-    Mux16(a=aOut, b=inM, sel=selAM, out=amOut);
+    // A-instruction loads instruction value.
+    // C-instruction loads ALU output when destination A is selected.
+    Mux16(
+        a=aluOut,
+        b=instruction,
+        sel=isAInst,
+        out=aRegIn
+    );
 
-    // ALU computation using c1..c6 (instruction[11..6])
+    // Load A-register for:
+    // A-instruction OR C-instruction with destination bit d1 = 1.
+    Or(
+        a=isAInst,
+        b=instruction[5],
+        out=loadA
+    );
+
+    ARegister(
+        in=aRegIn,
+        load=loadA,
+        out=aOut,
+        out[0..14]=addressM
+    );
+
+    // -------------------------------------------------
+    // 3. D-register control
+    // -------------------------------------------------
+
+    // Load D-register only for C-instructions
+    // with destination bit d2 = 1.
+    And(
+        a=instruction[15],
+        b=instruction[4],
+        out=loadD
+    );
+
+    DRegister(
+        in=aluOut,
+        load=loadD,
+        out=dOut
+    );
+
+    // -------------------------------------------------
+    // 4. ALU input selection
+    // -------------------------------------------------
+
+    // Select memory input when the C-instruction
+    // uses M as its ALU operand (a-bit = 1).
+    And(
+        a=instruction[15],
+        b=instruction[12],
+        out=selAM
+    );
+
+    Mux16(
+        a=aOut,
+        b=inM,
+        sel=selAM,
+        out=amOut
+    );
+
+    // -------------------------------------------------
+    // 5. Arithmetic Logic Unit
+    // -------------------------------------------------
+
+    // ALU control bits:
+    // zx = instruction[11]
+    // nx = instruction[10]
+    // zy = instruction[9]
+    // ny = instruction[8]
+    // f  = instruction[7]
+    // no = instruction[6]
+
+    // ALU output is connected to outM only once.
     ALU(
         x=dOut,
         y=amOut,
@@ -69,24 +127,92 @@ CHIP CPU {
         ng=ng
     );
 
-    // Assert writeM only on C-instruction with d3 (instruction[3]) set
-    And(a=instruction[15], b=instruction[3], out=writeM);
+    // -------------------------------------------------
+    // 6. Memory write control
+    // -------------------------------------------------
 
-    // Jump condition evaluation
-    Or(a=zr, b=ng, out=zrOrNg);
-    Not(in=zrOrNg, out=pos); // pos = 1 iff aluOut > 0
+    // Enable memory writing only when:
+    // C-instruction AND destination bit d3 = 1.
+    And(
+        a=instruction[15],
+        b=instruction[3],
+        out=writeM
+    );
 
-    And(a=instruction[2], b=ng, out=jlt);  // j1: out < 0
-    And(a=instruction[1], b=zr, out=jeq);  // j2: out == 0
-    And(a=instruction[0], b=pos, out=jgt); // j3: out > 0
+    // -------------------------------------------------
+    // 7. Jump condition evaluation
+    // -------------------------------------------------
 
-    Or(a=jlt, b=jeq, out=jle);
-    Or(a=jle, b=jgt, out=jumpCond);
+    // Negative result: ALU output < 0
+    And(
+        a=instruction[2],
+        b=ng,
+        out=jlt
+    );
 
-    // Load PC only when C-instruction and jump condition is satisfied
-    And(a=instruction[15], b=jumpCond, out=pcLoad);
-    Not(in=pcLoad, out=pcInc);
+    // Zero result: ALU output = 0
+    And(
+        a=instruction[1],
+        b=zr,
+        out=jeq
+    );
 
-    // Program Counter
-    PC(in=aOut, load=pcLoad, inc=pcInc, reset=reset, out[0..14]=pc);
+    // Positive result: ALU output > 0
+    // A result is positive when neither zero nor negative.
+    Or(
+        a=zr,
+        b=ng,
+        out=zrOrNg
+    );
+
+    Not(
+        in=zrOrNg,
+        out=pos
+    );
+
+    And(
+        a=instruction[0],
+        b=pos,
+        out=jgt
+    );
+
+    // Combine all three jump conditions.
+    Or(
+        a=jlt,
+        b=jeq,
+        out=jumpLE
+    );
+
+    Or(
+        a=jumpLE,
+        b=jgt,
+        out=jumpCond
+    );
+
+    // -------------------------------------------------
+    // 8. Program Counter control
+    // -------------------------------------------------
+
+    // A jump is allowed only for a C-instruction
+    // whose selected jump condition is satisfied.
+    And(
+        a=instruction[15],
+        b=jumpCond,
+        out=pcLoad
+    );
+
+    // Increment PC when no jump is selected.
+    Not(
+        in=pcLoad,
+        out=pcInc
+    );
+
+    // PC reset has priority over load and increment.
+    PC(
+        in=aOut,
+        load=pcLoad,
+        inc=pcInc,
+        reset=reset,
+        out[0..14]=pc
+    );
 }
